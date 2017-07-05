@@ -10,19 +10,10 @@ from whitenoise.storage import \
     CompressedManifestStaticFilesStorage, HelpfulExceptionMixin, \
     MissingFileError
 
+from ixc_whitenoise import appsettings
 from ixc_whitenoise.models import UniqueFile
 
 logger = logging.getLogger(__name__)
-
-DEDUPE_EXTENTIONS = {
-    '.jpeg': '.jpg',
-    '.yaml': '.yml',
-}
-DEDUPE_EXTENTIONS.update(
-    getattr(settings, 'IXC_WHITENOISE_DEDUPE_EXTENTIONS', {}))
-
-DEDUPE_PATH_PREFIX = getattr(
-    settings, 'IXC_WHITENOISE_DEDUPE_PATH_PREFIX', 'dd')
 
 
 # Log a warning instead of raising an exception when a referenced file is
@@ -74,15 +65,11 @@ class UniqueMixin(object):
             md5.update(chunk)
         content_hash = md5.hexdigest()
 
-        # Strip dedupe path prefix from supplied name to avoid accidentally
-        # prepending it multiple times.
-        base_name = re.sub(r'^%s/' % re.escape(DEDUPE_PATH_PREFIX), '', name)
-
         # Determine unique name.
-        path, _ = posixpath.split(base_name)
-        _, ext = posixpath.splitext(base_name)
-        ext = DEDUPE_EXTENTIONS.get(ext.lower(), ext.lower())
-        unique_name = posixpath.join(DEDUPE_PATH_PREFIX, path, content_hash + ext)
+        path, _ = posixpath.split(name)
+        _, ext = posixpath.splitext(name)
+        ext = appsettings.DEDUPE_EXTENTIONS.get(ext.lower(), ext.lower())
+        unique_name = posixpath.join(path, content_hash + ext)
 
         # Abort without saving because existing files with the same name must
         # also have the same content.

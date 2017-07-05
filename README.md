@@ -20,8 +20,8 @@ Settings:
     extensions in a dict, e.g. `{'.jpeg': '.jpg', '.yaml': '.yml'}`.
     Deduplicated files will use the short version.
 
-  * `IXC_WHITENOISE_DEDUPE_PATH_PREFIX` - Deduplicated files will be saved into
-    this directory. Their original path will be retained, but their filename
+  * `IXC_WHITENOISE_DEDUPE_PREFIX` - Deduplicated files will be saved into this
+    directory. Their original path will be retained, but their filename
     will be replaced with a unique content hash.
 
 Management commands:
