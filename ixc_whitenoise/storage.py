@@ -115,7 +115,7 @@ def unlazy_storage(storage):
     """
     If `storage` is lazy, return the wrapped storage object.
     """
-    if isinstance(storage, LazyObject):
+    while isinstance(storage, LazyObject):
         if storage._wrapped is empty:
             storage._setup()
         storage = storage._wrapped
