@@ -29,11 +29,16 @@ setuptools.setup(
     include_package_data=True,
     install_requires=[
         'six',
-        'whitenoise>=4.1.3,<5',  # >=5 requires Python 3
     ],
     extras_require={
         'pipeline': [
             'django-pipeline',
+        ],
+        'django41': [
+            'whitenoise>=6.3.0',
+        ],
+        'django21': [
+            'whitenoise>=4.1.3,<5',
         ],
     },
     setup_requires=['setuptools_scm'],
