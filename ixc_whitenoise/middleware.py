@@ -1,5 +1,6 @@
 import posixpath
 
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage
 from django.http import HttpResponseRedirect
@@ -37,15 +38,31 @@ class StripVaryHeaderMiddleware(object):
 # Redirect requests for deduplicated unique storage.
 class WhiteNoiseMiddleware(WhiteNoiseMiddleware):
 
-    config_attrs = WhiteNoiseMiddleware.config_attrs + ('media_prefix', )
+    # whitenoise 6 doesn't have config_attrs any more.
+    try:
+        config_attrs = WhiteNoiseMiddleware.config_attrs + ('media_prefix', )
+    except AttributeError:
+        pass
     media_prefix = None
 
     def __init__(self, *args, **kwargs):
+        # This replaces the `config_attrs` which was removed in v6 (I think)
+        if not hasattr(self, "config_attrs"):
+            self.media_prefix = kwargs.pop(
+                "media_prefix", urlparse(settings.MEDIA_URL or '').path
+            )
         super(WhiteNoiseMiddleware, self).__init__(*args, **kwargs)
+        # this doesn't work becaues it hasn't called configured_from_settings
+        # - maybe it doesn't do that any more? If not, I wonder if trying to
+        # maintain backward-compatible support is Too Hard
+        self.media_prefix = ensure_leading_trailing_slash(self.media_prefix)
+        self.media_root = settings.MEDIA_ROOT
         if self.media_root:
             self.add_files(self.media_root, prefix=self.media_prefix)
 
+    # this doesn't happen any more in WN 6
     def check_settings(self, settings):
+        raise NotImplementedError()
         super(WhiteNoiseMiddleware, self).check_settings(settings)
         if self.media_prefix == '/':
             media_url = getattr(settings, 'MEDIA_URL', '').rstrip('/')
@@ -54,15 +71,18 @@ class WhiteNoiseMiddleware(WhiteNoiseMiddleware):
                 'example: MEDIA_URL = {0!r}'.format(media_url + '/media/')
             )
 
+    # this doesn't happen any more in WN 6
     def configure_from_settings(self, settings):
+        raise NotImplementedError()
         self.media_prefix = urlparse(settings.MEDIA_URL or '').path
         super(WhiteNoiseMiddleware, self).configure_from_settings(settings)
         self.media_prefix = ensure_leading_trailing_slash(self.media_prefix)
         self.media_root = settings.MEDIA_ROOT
 
-    # Files with unique names are always immutable.
-    def is_immutable_file(self, path, url):
-        if super(WhiteNoiseMiddleware, self).is_immutable_file(path, url):
+    # Files with unique names are always immutable
+    def immutable_file_test(self, path, url): # looks like this was never named is_immutable_file?
+
+        if super(WhiteNoiseMiddleware, self).immutable_file_test(path, url):
             return True
         # `MEDIA_ROOT` and `MEDIA_URL` are used with the default storage class.
         # Only assume media is immutable if `UniqueMixin` is the default
@@ -91,3 +111,4 @@ class WhiteNoiseMiddleware(WhiteNoiseMiddleware):
                     unique_file.name,
                 ))
         return response
+
