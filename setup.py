@@ -41,5 +41,5 @@ setuptools.setup(
             'whitenoise>=4.1.3,<5',
         ],
     },
-    setup_requires=['setuptools_scm'],
+    setup_requires=['setuptools_scm<10'],
 )
